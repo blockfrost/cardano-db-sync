@@ -46,6 +46,7 @@ library
                         Cardano.Db.Schema.Types
                         Cardano.Db.Schema.Orphans
                         Cardano.Db.Types
+                        Cardano.Db.Text
 
 
   build-depends:        aeson
@@ -58,6 +59,7 @@ library
                       , conduit
                       , conduit-extra
                       , contra-tracer
+                      , cryptonite
                       , directory
                       , esqueleto
                       , extra
