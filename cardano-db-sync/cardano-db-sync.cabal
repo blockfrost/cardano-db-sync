@@ -47,7 +47,7 @@ custom-setup
                         base
                       , Cabal
                       , filepath
-                      , cryptonite
+                      , cardano-crypto-class
                       , bytestring
 
 library

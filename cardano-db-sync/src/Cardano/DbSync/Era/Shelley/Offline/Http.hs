@@ -12,10 +12,10 @@ import           Cardano.Prelude
 
 import           Control.Monad.Trans.Except.Extra (handleExceptT, hoistEither)
 
+import           Cardano.Db (PoolUrl (..), textShow)
+
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as Text
-
-import           Cardano.Db (PoolUrl (..), textShow)
 
 import           Network.HTTP.Client (HttpException (..))
 import qualified Network.HTTP.Client as Http

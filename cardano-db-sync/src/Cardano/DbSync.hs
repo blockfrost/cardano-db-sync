@@ -47,8 +47,6 @@ import           Cardano.Sync.Tracing.ToObjectOrphans ()
 
 import           Control.Monad.Extra (whenJust)
 
-import qualified Data.Text as Text
-
 import           Database.Persist.Postgresql (withPostgresqlConn)
 
 import           Database.Persist.Sql (SqlBackend)

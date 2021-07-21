@@ -1,7 +1,7 @@
 module Main where
 
+import           Cardano.Crypto.Hash
 import           Control.Monad (forM)
-import           Crypto.Hash (Digest (..), MD5 (..), hashWith)
 
 import qualified Data.ByteString.Char8 as BS
 
@@ -34,26 +34,27 @@ main = defaultMainWithHooks generateHooks
 
 generateMigrations :: LocalBuildInfo -> FilePath -> FilePath -> IO ()
 generateMigrations locInfo srcDir outDir = do
-  createDirectoryIfMissingVerbose normal True "gen"
-  let sqls = collectMigrationSql srcDir
-  sqls' <- forM sqls build
-  buildMigrationModule sqls'
+    createDirectoryIfMissingVerbose normal True "gen"
+    sqls <- forM (collectMigrationSql srcDir) build
+    buildMigrationModule sqls
   where
-    -- TODO Should we be more specific with the SQL files we pickup?
-    -- There is a naming convention of migration-1-0000-20190730.sql
-    --                                 migration-<major>-<minor>-<yyyymmdd>.sql
+
     collectMigrationSql :: FilePath -> [FilePath]
     collectMigrationSql path =
       filter ((== ".sql") . takeExtension) (extraSrcFiles $ localPkgDescr locInfo)
 
-    build :: FilePath -> IO (Digest MD5, FilePath)
+    hashAs :: ByteString -> Hash Blake2b_256 ByteString
+    hashAs = hashWith id
+
+    build :: FilePath -> IO (String, FilePath)
     build filepath = do
       file <- BS.readFile filepath
-      pure (hashWith MD5 file, filepath)
+      pure (hashToStringAsHex . hashAs $ file, filepath)
 
-    buildMigrationModule :: [(Digest MD5, FilePath)] -> IO ()
+
+    buildMigrationModule :: [(String, FilePath)] -> IO ()
     buildMigrationModule sqls =
-      let buildLine (md5, filepath) = "    KnownMigration \"" ++ show md5 ++ "\" \"" ++ filepath ++ "\"" in
+      let buildLine (hashedFile, filepath) = "    KnownMigration \"" ++ hashedFile ++ "\" \"" ++ filepath ++ "\"" in
 
       rewriteFileEx normal "gen/MigrationValidations.hs" $
         unlines
