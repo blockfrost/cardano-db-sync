@@ -14,6 +14,7 @@ module Cardano.DbSync.Era.Shelley.Generic.Tx
   , TxOut (..)
   , TxRedeemer (..)
   , TxWithdrawal (..)
+  , TxScript (..)
   , fromShelleyTx
   , fromAllegraTx
   , fromMaryTx
@@ -33,6 +34,7 @@ import           Cardano.DbSync.Era.Shelley.Generic.Witness
 
 import qualified Cardano.Ledger.Address as Ledger
 import           Cardano.Ledger.Alonzo (AlonzoEra)
+import qualified Cardano.Ledger.Alonzo.Data as Alonzo
 import qualified Cardano.Ledger.Alonzo.PParams as Alonzo
 import           Cardano.Ledger.Alonzo.Scripts (ExUnits (..), Script (..), Tag (..), txscriptfee)
 import           Cardano.Ledger.Alonzo.Tx (ValidatedTx (..))
@@ -61,7 +63,7 @@ import           Ouroboros.Consensus.Cardano.Block (StandardAllegra, StandardAlo
                    StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Ledger.Block (ShelleyBasedEra)
 
-import           Shelley.Spec.Ledger.Scripts ()
+import           Shelley.Spec.Ledger.Scripts (ScriptHash)
 import qualified Shelley.Spec.Ledger.Tx as Shelley
 import qualified Shelley.Spec.Ledger.TxBody as Shelley
 
@@ -84,8 +86,9 @@ data Tx = Tx
   , txParamProposal :: ![ParamProposal]
   , txMint :: !(Value StandardCrypto)
   , txRedeemer :: [TxRedeemer]
-  , scriptSizes :: [Int]
-  , scriptsFee :: Coin
+  , txScriptSizes :: [Word64] -- this contains only the sizes of plutus scripts in witnesses
+  , txScripts :: [TxScript]
+  , txScriptsFee :: Coin
   }
 
 data TxCertificate = TxCertificate
@@ -119,7 +122,12 @@ data TxRedeemer = TxRedeemer
   , txRedeemerPurpose :: !Tag
   , txRedeemerFee :: !Coin
   , txRedeemerIndex :: !Word64
-  , txScriptHash :: Maybe (Either TxIn ByteString)
+  , txRedeemerScriptHash :: Maybe (Either TxIn ByteString)
+  }
+
+data TxScript = TxScript
+  { txScriptHash :: !ByteString
+  , txScriptPlutusSize :: Maybe Word64
   }
 
 fromAllegraTx :: (Word64, Shelley.Tx StandardAllegra) -> Tx
@@ -144,8 +152,9 @@ fromAllegraTx (blkIndex, tx) =
       , txParamProposal = maybe [] (convertParamProposal (Allegra Standard)) $ strictMaybeToMaybe (ShelleyMa.update rawTxBody)
       , txMint = mempty     -- Allegra does not support Multi-Assets
       , txRedeemer = []     -- Allegra does not support Redeemers
-      , scriptSizes = []    -- Allegra does not support scripts
-      , scriptsFee = Coin 0 -- Allegra does not support scripts
+      , txScriptSizes = []    -- Allegra does not support scripts
+      , txScripts = []        -- We don't populate scripts for Allegra
+      , txScriptsFee = Coin 0 -- Allegra does not support scripts
       }
   where
     fromTxOut :: Word16 -> Shelley.TxOut StandardAllegra -> TxOut
@@ -191,8 +200,9 @@ fromShelleyTx (blkIndex, tx) =
       , txParamProposal = maybe [] (convertParamProposal (Shelley Standard)) $ strictMaybeToMaybe (Shelley._txUpdate $ Shelley.body tx)
       , txMint = mempty     -- Shelley does not support Multi-Assets
       , txRedeemer = []     -- Shelley does not support Redeemer
-      , scriptSizes = []    -- Shelley does not support scripts
-      , scriptsFee = Coin 0 -- Shelley does not support scripts
+      , txScriptSizes = []    -- Shelley does not support scripts
+      , txScripts = []        -- We don't populate scripts for Shelley
+      , txScriptsFee = Coin 0 -- Shelley does not support scripts
       }
   where
     fromTxOut :: Word16 -> Shelley.TxOut StandardShelley -> TxOut
@@ -229,8 +239,9 @@ fromMaryTx (blkIndex, tx) =
       , txParamProposal = maybe [] (convertParamProposal (Mary Standard)) $ strictMaybeToMaybe (ShelleyMa.update $ unTxBodyRaw tx)
       , txMint = coerceMint (ShelleyMa.mint $ unTxBodyRaw tx)
       , txRedeemer = []     -- Mary does not support Redeemer
-      , scriptSizes = []    -- Mary does not support scripts
-      , scriptsFee = Coin 0 -- Mary does not support scripts
+      , txScriptSizes = []    -- Mary does not support scripts
+      , txScripts = []        -- We don't populate scripts for Mary
+      , txScriptsFee = Coin 0 -- Mary does not support scripts
       }
   where
     fromTxOut :: Word16 -> Shelley.TxOut StandardMary -> TxOut
@@ -273,8 +284,9 @@ fromAlonzoTx pp (blkIndex, tx) =
       , txParamProposal = maybe [] (convertParamProposal (Alonzo Standard)) $ strictMaybeToMaybe (getField @"update" txBody)
       , txMint = coerceMint (getField @"mint" txBody)
       , txRedeemer = redeemers
-      , scriptSizes = sizes
-      , scriptsFee = minFees
+      , txScriptSizes = sizes
+      , txScripts = scripts
+      , txScriptsFee = minFees
       }
   where
     fromTxOut :: Word16 -> Alonzo.TxOut StandardAlonzo -> TxOut
@@ -289,12 +301,28 @@ fromAlonzoTx pp (blkIndex, tx) =
     txBody :: Ledger.TxBody StandardAlonzo
     txBody = getField @"body" tx
 
-    sizes :: [Int]
+    sizes :: [Word64]
     sizes = mapMaybe getScriptSize $ toList $ Ledger.txscripts $ getField @"wits" tx
 
-    getScriptSize :: Script (AlonzoEra StandardCrypto) -> Maybe Int
+    scripts :: [TxScript]
+    scripts = mkTxScript <$>
+       (Map.toList (getField @"txscripts" $ getField @"wits" tx)
+      ++ getAuxScripts (getField @"auxiliaryData" tx))
+
+    getAuxScripts :: ShelleyMa.StrictMaybe (Alonzo.AuxiliaryData StandardAlonzo) -> [(ScriptHash StandardCrypto, Script (AlonzoEra StandardCrypto))]
+    getAuxScripts maux = case strictMaybeToMaybe maux of
+      Nothing -> []
+      Just (Alonzo.AuxiliaryData _ scrs) -> map (\scr -> (Ledger.hashScript @StandardAlonzo scr, scr)) $ toList scrs
+
+    mkTxScript :: (ScriptHash StandardCrypto, Script (AlonzoEra StandardCrypto)) -> TxScript
+    mkTxScript (hsh, script) = TxScript
+      { txScriptHash = unScriptHash hsh
+      , txScriptPlutusSize = getScriptSize script
+      }
+
+    getScriptSize :: Script (AlonzoEra StandardCrypto) -> Maybe Word64
     getScriptSize (TimelockScript _) = Nothing
-    getScriptSize (PlutusScript sbs) = Just $ SBS.length sbs
+    getScriptSize (PlutusScript sbs) = Just $ fromIntegral $ SBS.length sbs
 
     minFees :: Coin
     minFees = txscriptfee (Alonzo._prices pp) $ Alonzo.totExUnits tx
@@ -343,8 +371,8 @@ fromAlonzoTx pp (blkIndex, tx) =
           in map (fromTxIn Nothing) $ toList inputsSet
 
     redeemers :: [TxRedeemer]
-    redeemers = mkRedeemer <$> (Map.toList
-      (snd <$> Ledger.unRedeemers (getField @"txrdmrs" (getField @"wits" tx))))
+    redeemers = mkRedeemer <$> Map.toList
+      (snd <$> Ledger.unRedeemers (getField @"txrdmrs" (getField @"wits" tx)))
 
     mkRedeemer :: (Ledger.RdmrPtr, ExUnits) -> TxRedeemer
     mkRedeemer (ptr@(Ledger.RdmrPtr tag index), exUnits) = TxRedeemer
@@ -353,7 +381,7 @@ fromAlonzoTx pp (blkIndex, tx) =
       , txRedeemerFee = txscriptfee (Alonzo._prices pp) exUnits
       , txRedeemerPurpose = tag
       , txRedeemerIndex = index
-      , txScriptHash = findScriptHash ptr
+      , txRedeemerScriptHash = findScriptHash ptr
       }
 
     -- For 'Spend' script, we need to resolve the 'TxIn' to find the ScriptHash

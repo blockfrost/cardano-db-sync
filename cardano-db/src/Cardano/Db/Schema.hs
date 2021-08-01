@@ -19,7 +19,8 @@ module Cardano.Db.Schema where
 
 import           Cardano.Db.Schema.Orphans ()
 
-import           Cardano.Db.Types (DbInt65, DbLovelace, DbWord64, ScriptPurpose, SyncState)
+import           Cardano.Db.Types (DbInt65, DbLovelace, DbWord64, ScriptPurpose, ScriptType,
+                   SyncState)
 
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Int (Int64)
@@ -113,7 +114,6 @@ share
 
     -- New for Alonzo
     validContract       Bool                                    -- False if the contract is invalid, True otherwise.
-    exUnitFee           DbLovelace          sqltype=lovelace
     scriptSize          Word64              sqltype=uinteger
     UniqueTx            hash
 
@@ -374,6 +374,13 @@ share
     scriptHash          ByteString Maybe    sqltype=hash28type
     UniqueRedeemer      txId purpose index
 
+  Script
+    txId                TxId                OnDeleteCascade
+    hash                ByteString          sqltype=hash28type
+    type                ScriptType          sqltype=scripttype
+    serialisedSize      Word64 Maybe        sqltype=uinteger
+    UniqueScript        hash
+
   -- -----------------------------------------------------------------------------------------------
   -- Update parameter proposals.
 
@@ -550,7 +557,6 @@ schemaDocs =
       TxInvalidBefore # "Transaction in invalid before this slot number."
       TxInvalidHereafter # "Transaction in invalid at or after this slot number."
       TxValidContract # "False if the contract is invalid. True if the contract is valid or there is no contract."
-      TxExUnitFee # "The fees associated with Plutus scripts in the transaction."
       TxScriptSize # "The sum of the script sizes (in bytes) of scripts in the transaction."
 
     StakeAddress --^ do

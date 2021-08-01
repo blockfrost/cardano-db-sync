@@ -205,8 +205,7 @@ insertTx tracer network lStateSnap blkId epochNo slotNo blockIndex tx = do
                 , DB.txInvalidBefore = DbWord64 . unSlotNo <$> Generic.txInvalidBefore tx
                 , DB.txInvalidHereafter = DbWord64 . unSlotNo <$> Generic.txInvalidHereafter tx
                 , DB.txValidContract = Generic.txValidContract tx
-                , DB.txExUnitFee = DB.DbLovelace (fromIntegral . unCoin $ Generic.scriptsFee tx)
-                , DB.txScriptSize = fromIntegral $ sum $ Generic.scriptSizes tx
+                , DB.txScriptSize = sum $ Generic.txScriptSizes tx
                 }
 
     -- Insert outputs for a transaction before inputs in case the inputs for this transaction
@@ -230,6 +229,8 @@ insertTx tracer network lStateSnap blkId epochNo slotNo blockIndex tx = do
     mapM_ (insertParamProposal tracer txId) $ Generic.txParamProposal tx
 
     insertMaTxMint tracer txId $ Generic.txMint tx
+
+    mapM_ (insertScript tracer txId) $ Generic.txScripts tx
 
 resolveTxInputs :: MonadIO m => Generic.TxIn -> ExceptT SyncNodeError (ReaderT SqlBackend m) (Generic.TxIn, DB.TxId, DbLovelace)
 resolveTxInputs txIn = do
@@ -726,8 +727,8 @@ insertRedeemer _tr txId redeemer = do
     findScriptHash
       :: (MonadBaseControl IO m, MonadIO m)
       => ExceptT SyncNodeError (ReaderT SqlBackend m) (Maybe ByteString)
-    findScriptHash = case Generic.txScriptHash redeemer of
-      Nothing -> pure $ Nothing
+    findScriptHash = case Generic.txRedeemerScriptHash redeemer of
+      Nothing -> pure Nothing
       Just (Right bs) -> pure $ Just bs
       Just (Left txIn) -> do
         fst <$> liftLookupFail "queryResolveInputCredentials" (queryResolveInputCredentials txIn)
@@ -873,6 +874,23 @@ insertMaTxOut _tracer txOutId maMap =
           , DB.maTxOutQuantity = DbWord64 (fromIntegral amount)
           , DB.maTxOutTxOutId = txOutId
           }
+
+insertScript
+    :: (MonadBaseControl IO m, MonadIO m)
+    => Trace IO Text -> DB.TxId -> Generic.TxScript
+    -> ExceptT SyncNodeError (ReaderT SqlBackend m) ()
+insertScript _tracer txId script = do
+    void . lift . DB.insertScript $
+      DB.Script
+        { DB.scriptTxId = txId
+        , DB.scriptHash = Generic.txScriptHash script
+        , DB.scriptType = tp
+        , DB.scriptSerialisedSize = Generic.txScriptPlutusSize script
+        }
+  where
+    tp = case Generic.txScriptPlutusSize script of
+      Nothing -> DB.Timelock
+      Just _ -> DB.Plutus
 
 insertPots
     :: (MonadBaseControl IO m, MonadIO m)

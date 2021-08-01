@@ -12,6 +12,7 @@ module Cardano.Db.Types
   , DbWord64 (..)
   , SyncState (..)
   , ScriptPurpose (..)
+  , ScriptType (..)
   , deltaCoinToDbInt65
   , integerToDbInt65
   , lovelaceToAda
@@ -21,8 +22,10 @@ module Cardano.Db.Types
   , showDbInt65
   , readRewardType
   , readScriptPurpose
+  , readScriptType
   , readSyncState
   , renderScriptPurpose
+  , renderScriptType
   , renderSyncState
   , showRewardType
   , word64ToAda
@@ -96,6 +99,11 @@ data ScriptPurpose
   | Mint
   | Cert
   | Rewrd
+  deriving (Eq, Generic, Show)
+
+data ScriptType
+  = Timelock
+  | Plutus
   deriving (Eq, Generic, Show)
 
 deltaCoinToDbInt65 :: DeltaCoin -> DbInt65
@@ -174,6 +182,19 @@ readScriptPurpose str =
     "cert" -> Cert
     "reward" -> Rewrd
     _other -> error $ "readScriptPurpose: Unknown ScriptPurpose " ++ str
+
+renderScriptType :: ScriptType -> Text
+renderScriptType st =
+  case st of
+    Timelock -> "timelock"
+    Plutus -> "plutus"
+
+readScriptType :: String -> ScriptType
+readScriptType str =
+  case str of
+    "timelock" -> Timelock
+    "plutus" -> Plutus
+    _other -> error $ "readScriptType: Unknown ScriptType " ++ str
 
 showRewardType :: Shelley.RewardType -> Text
 showRewardType rt =

@@ -95,7 +95,6 @@ mkTxs blkId count =
         , txInvalidHereafter = Nothing
         , txInvalidBefore = Nothing
         , txValidContract = True
-        , txExUnitFee = DbLovelace 0
         , txScriptSize = 0
         }
 

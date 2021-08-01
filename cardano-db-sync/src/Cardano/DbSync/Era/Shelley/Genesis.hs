@@ -186,7 +186,6 @@ insertTxOuts blkId (Shelley.TxIn txInId _, txOut) = do
               , DB.txInvalidHereafter = Nothing
               , DB.txInvalidBefore = Nothing
               , DB.txValidContract = True
-              , DB.txExUnitFee = DB.DbLovelace 0
               , DB.txScriptSize = 0
               }
   void . DB.insertTxOut $

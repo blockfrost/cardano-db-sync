@@ -32,6 +32,7 @@ module Cardano.Db.Insert
   , insertPoolUpdate
   , insertReserve
   , insertReservedPoolTicker
+  , insertScript
   , insertSlotLeader
   , insertStakeAddress
   , insertStakeDeregistration
@@ -172,6 +173,9 @@ insertReserve = insertUnchecked "Reserve"
 
 insertReservedPoolTicker :: (MonadBaseControl IO m, MonadIO m) => ReservedPoolTicker -> ReaderT SqlBackend m ReservedPoolTickerId
 insertReservedPoolTicker = insertUnchecked "ReservedPoolTicker"
+
+insertScript :: (MonadBaseControl IO m, MonadIO m) => Script -> ReaderT SqlBackend m ScriptId
+insertScript = insertCheckUnique "insertScript"
 
 insertSlotLeader :: (MonadBaseControl IO m, MonadIO m) => SlotLeader -> ReaderT SqlBackend m SlotLeaderId
 insertSlotLeader = insertCheckUnique "SlotLeader"

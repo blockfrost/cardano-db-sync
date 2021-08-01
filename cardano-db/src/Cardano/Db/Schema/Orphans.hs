@@ -5,8 +5,9 @@
 module Cardano.Db.Schema.Orphans where
 
 import           Cardano.Db.Types (DbInt65 (..), DbLovelace (..), DbWord64 (..), ScriptPurpose,
-                   SyncState, readDbInt65, readSyncState, renderSyncState, readScriptPurpose,
-                   renderScriptPurpose, showDbInt65)
+                   ScriptType (..), SyncState, readDbInt65, readScriptPurpose, readScriptType,
+                   readSyncState, renderScriptPurpose, renderScriptType, renderSyncState,
+                   showDbInt65)
 
 import qualified Data.ByteString.Char8 as BS
 import           Data.Ratio (denominator, numerator)
@@ -66,6 +67,12 @@ instance PersistField ScriptPurpose where
   fromPersistValue (PersistLiteral bs) = Right $ readScriptPurpose (BS.unpack bs)
   fromPersistValue x =
     Left $ mconcat [ "Failed to parse Haskell type ScriptPurpose: ", Text.pack (show x) ]
+
+instance PersistField ScriptType where
+  toPersistValue = PersistText . renderScriptType
+  fromPersistValue (PersistLiteral bs) = Right $ readScriptType (BS.unpack bs)
+  fromPersistValue x =
+    Left $ mconcat [ "Failed to parse Haskell type ScriptType: ", Text.pack (show x) ]
 
 instance PersistField Word128 where
   toPersistValue = PersistText . Text.pack . show

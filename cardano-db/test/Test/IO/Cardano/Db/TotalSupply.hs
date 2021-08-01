@@ -51,7 +51,6 @@ initialSupplyTest =
                   , txInvalidHereafter = Nothing
                   , txInvalidBefore = Nothing
                   , txValidContract = True
-                  , txExUnitFee = DbLovelace 0
                   , txScriptSize = 0
                   }
     _ <- insertTxIn (TxIn tx1Id (head tx0Ids) 0 Nothing)

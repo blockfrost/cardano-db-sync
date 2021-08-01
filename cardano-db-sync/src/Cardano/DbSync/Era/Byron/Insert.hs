@@ -195,7 +195,6 @@ insertTx tracer blkId tx blockIndex = do
                 , DB.txInvalidHereafter = Nothing
                 , DB.txInvalidBefore = Nothing
                 , DB.txValidContract = True
-                , DB.txExUnitFee = DB.DbLovelace 0
                 , DB.txScriptSize = 0
                 }
 
