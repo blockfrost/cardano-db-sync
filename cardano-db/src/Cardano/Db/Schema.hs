@@ -563,6 +563,7 @@ schemaDocs =
       "A table of unique stake addresses. Can be an actual address or a script hash."
       StakeAddressHashRaw # "The raw bytes of the stake address hash."
       StakeAddressView # "The Bech32 encoded version of the stake address."
+      StakeAddressScriptHash # "The script hash, in case this address is locked by a script."
       StakeAddressRegisteredTxId # "The Tx table index of the transaction in which this address was registered."
 
     TxOut --^ do
@@ -571,7 +572,8 @@ schemaDocs =
       TxOutIndex # "The index of this transaction output with the transaction."
       TxOutAddress # "The human readable encoding of the output address. Will be Base58 for Byron era addresses and Bech32 for Shelley era."
       TxOutAddressRaw # "The raw binary address."
-      TxOutPaymentCred # "The payment credential part of the Shelley address. (NULL for Byron addresses)."
+      TxOutAddressHasScript # "Flag which shows if this address is locked by a script."
+      TxOutPaymentCred # "The payment credential part of the Shelley address. (NULL for Byron addresses). For a script-locked address, this is the script hash."
       TxOutStakeAddressId # "The StakeAddress table index for the stake address part of the Shelley address. (NULL for Byron addresses)."
       TxOutValue # "The output value (in Lovelace) of the transaction output."
 
@@ -580,6 +582,7 @@ schemaDocs =
       TxInTxInId # "The Tx table index where this transaction is used as an input."
       TxInTxOutId # "The Tx table index where this transaction was created as an output."
       TxInTxOutIndex # "The index within the transaction outputs."
+      TxInRedeemerId # "The Redeemer table index which is used to validate this input."
 
     CollateralTxIn --^ do
       "A table for transaction collateral inputs."
@@ -668,6 +671,7 @@ schemaDocs =
       StakeDeregistrationAddrId # "The StakeAddress table index for the stake address."
       StakeDeregistrationCertIndex # "The index of this stake deregistration within the certificates of this transaction."
       StakeDeregistrationTxId # "The Tx table index of the transaction where this stake address was deregistered."
+      StakeDeregistrationRedeemerId # "The Redeemer table index that is related with this certificate."
 
     Delegation --^ do
       "A table containing delegations from a stake address to a stake pool."
@@ -677,6 +681,7 @@ schemaDocs =
       DelegationActiveEpochNo # "The epoch number where this delegation becomes active."
       DelegationTxId # "The Tx table index of the transaction that contained this delegation."
       DelegationSlotNo # "The slot number of the block that contained this delegation."
+      DelegationRedeemerId # "The Redeemer table index that is related with this certificate."
 
     TxMetadata --^ do
       "A table for metadata attached to a transaction."
@@ -709,6 +714,7 @@ schemaDocs =
       WithdrawalAddrId # "The StakeAddress table index for the stake address for which the withdrawal is for."
       WithdrawalAmount # "The withdrawal amount (in Lovelace)."
       WithdrawalTxId # "The Tx table index for the transaction that contains this withdrawal."
+      WithdrawalRedeemerId # "The Redeemer table index that is related with this withdrawal."
 
     EpochStake --^ do
       "A table containing the epoch stake distribution for each epoch."
@@ -758,6 +764,23 @@ schemaDocs =
       MaTxOutName # "The MultiAsset name."
       MaTxOutQuantity # "The Multi Asset transaction output amount (denominated in the Multi Asset)."
       MaTxOutTxOutId # "The TxOut table index for the transaction that this Multi Asset transaction output."
+
+    Redeemer --^ do
+      "A table containing redeemers. A redeemer is provided for all items that are validated by a script."
+      RedeemerTxId # "The Tx that table index that contains this redeemer."
+      RedeemerUnitsMem # "The budger in Memory to run a script."
+      RedeemerUnitsSteps # "The budger in Cpu steps to run a script."
+      RedeemerFee # "The budger in fees to run a script. The fees depend on the ExUnits and the current prices."
+      RedeemerPurpose # "What kind pf validation this redeemer is used for. It can be one of 'spend', 'mint', 'cert', 'reward'."
+      RedeemerIndex # "The Index of the redeemer pointer in the transaction."
+      RedeemerScriptHash # "The script hash this redeemer is used for."
+
+    Script --^ do
+      "A table containing scripts available in the blockchain, found in witnesses or auxdata of transactions."
+      ScriptTxId # "The Tx table index for the transaction where this script first became available."
+      ScriptHash # "The Hash of the Script."
+      ScriptType # "The type of the script. This is either 'timelock' or 'plutus'."
+      ScriptSerialisedSize # "The size of the CBOR serialised script, if it is a plutus script."
 
     ParamProposal --^ do
       "A table containing block chain parameter change proposals."
