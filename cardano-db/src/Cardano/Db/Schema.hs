@@ -19,7 +19,7 @@ module Cardano.Db.Schema where
 
 import           Cardano.Db.Schema.Orphans ()
 
-import           Cardano.Db.Types (DbInt65, DbLovelace, DbWord64, SyncState)
+import           Cardano.Db.Types (DbInt65, DbLovelace, DbWord64, ScriptPurpose, SyncState)
 
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Int (Int64)
@@ -113,7 +113,6 @@ share
 
     -- New for Alonzo
     validContract       Bool                                    -- False if the contract is invalid, True otherwise.
-    exUnitNumber        Word64              sqltype=uinteger
     exUnitFee           DbLovelace          sqltype=lovelace
     scriptSize          Word64              sqltype=uinteger
     UniqueTx            hash
@@ -121,6 +120,7 @@ share
   StakeAddress          -- Can be an address of a script hash
     hashRaw             ByteString          sqltype=addr29type
     view                Text
+    scriptHash          ByteString Maybe    sqltype=hash28type
     registeredTxId      TxId                OnDeleteCascade     -- Only used for rollback.
     UniqueStakeAddress  hashRaw
 
@@ -129,6 +129,7 @@ share
     index               Word16              sqltype=txindex
     address             Text
     addressRaw          ByteString
+    addressHasScript    Bool
     paymentCred         ByteString Maybe    sqltype=hash28type
     stakeAddressId      StakeAddressId Maybe OnDeleteCascade
     value               DbLovelace          sqltype=lovelace
@@ -138,6 +139,7 @@ share
     txInId              TxId                OnDeleteCascade     -- The transaction where this is used as an input.
     txOutId             TxId                OnDeleteCascade     -- The transaction where this was created as an output.
     txOutIndex          Word16              sqltype=txindex
+    redeemerId          RedeemerId Maybe    OnDeleteCascade
     UniqueTxin          txOutId txOutIndex
 
   CollateralTxIn
@@ -255,6 +257,7 @@ share
     addrId              StakeAddressId      OnDeleteCascade
     certIndex           Word16
     txId                TxId                OnDeleteCascade
+    redeemerId          RedeemerId Maybe    OnDeleteCascade
     UniqueStakeDeregistration addrId txId
 
   Delegation
@@ -264,6 +267,7 @@ share
     activeEpochNo       Word64
     txId                TxId                OnDeleteCascade
     slotNo              Word64              sqltype=uinteger
+    redeemerId          RedeemerId Maybe    OnDeleteCascade
     UniqueDelegation    addrId poolHashId txId
 
   TxMetadata
@@ -301,6 +305,7 @@ share
   Withdrawal
     addrId              StakeAddressId      OnDeleteCascade
     amount              DbLovelace          sqltype=lovelace
+    redeemerId          RedeemerId Maybe    OnDeleteCascade
     txId                TxId                OnDeleteCascade
     UniqueWithdrawal    addrId txId
 
@@ -355,6 +360,19 @@ share
     quantity            DbWord64            sqltype=word64type
     txOutId             TxOutId             OnDeleteCascade
     UniqueMaTxOut       policy name txOutId
+
+  -- -----------------------------------------------------------------------------------------------
+  -- Scripts related tables.
+
+  Redeemer
+    txId                TxId                OnDeleteCascade
+    unitsMem            DbWord64            sqltype=word64type
+    unitsSteps          DbWord64            sqltype=word64type
+    fee                 DbLovelace          sqltype=lovelace
+    purpose             ScriptPurpose       sqltype=scriptpurposetype
+    index               Word64              sqltype=uinteger
+    scriptHash          ByteString Maybe    sqltype=hash28type
+    UniqueRedeemer      txId purpose index
 
   -- -----------------------------------------------------------------------------------------------
   -- Update parameter proposals.
@@ -532,7 +550,6 @@ schemaDocs =
       TxInvalidBefore # "Transaction in invalid before this slot number."
       TxInvalidHereafter # "Transaction in invalid at or after this slot number."
       TxValidContract # "False if the contract is invalid. True if the contract is valid or there is no contract."
-      TxExUnitNumber # "The cost of running the scripts in a transaction in arbitrary execution units."
       TxExUnitFee # "The fees associated with Plutus scripts in the transaction."
       TxScriptSize # "The sum of the script sizes (in bytes) of scripts in the transaction."
 

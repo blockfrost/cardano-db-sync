@@ -10,6 +10,7 @@ module Cardano.DbSync.Era.Shelley.Query
   , queryStakePoolKeyHash
   , queryStakeAddressRef
   , queryResolveInput
+  , queryResolveInputCredentials
 
   , queryStakeAddressIdPair
   , queryPoolHashIdPair
@@ -106,6 +107,10 @@ queryStakeAddressRef addr =
 queryResolveInput :: MonadIO m => Generic.TxIn -> ReaderT SqlBackend m (Either LookupFail (TxId, DbLovelace))
 queryResolveInput txIn = do
     queryTxOutValue (Generic.txInHash txIn, fromIntegral (Generic.txInIndex txIn))
+
+queryResolveInputCredentials :: MonadIO m => Generic.TxIn -> ReaderT SqlBackend m (Either LookupFail (Maybe ByteString, Bool))
+queryResolveInputCredentials txIn = do
+    queryTxOutCredentials (Generic.txInHash txIn, fromIntegral (Generic.txInIndex txIn))
 
 queryStakeAddressIdPair :: MonadIO m => Generic.StakeCred -> ReaderT SqlBackend m (Maybe (Generic.StakeCred, StakeAddressId))
 queryStakeAddressIdPair cred@(Generic.StakeCred bs) = do

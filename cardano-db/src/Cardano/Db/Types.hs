@@ -11,6 +11,7 @@ module Cardano.Db.Types
   , DbInt65 (..)
   , DbWord64 (..)
   , SyncState (..)
+  , ScriptPurpose (..)
   , deltaCoinToDbInt65
   , integerToDbInt65
   , lovelaceToAda
@@ -19,7 +20,9 @@ module Cardano.Db.Types
   , readDbInt65
   , showDbInt65
   , readRewardType
+  , readScriptPurpose
   , readSyncState
+  , renderScriptPurpose
   , renderSyncState
   , showRewardType
   , word64ToAda
@@ -88,6 +91,13 @@ data SyncState
   | SyncFollowing       -- Local tip is following global chain tip.
   deriving (Eq, Show)
 
+data ScriptPurpose
+  = Spend
+  | Mint
+  | Cert
+  | Rewrd
+  deriving (Eq, Generic, Show)
+
 deltaCoinToDbInt65 :: DeltaCoin -> DbInt65
 deltaCoinToDbInt65 (DeltaCoin dc) =
   if dc < 0
@@ -147,6 +157,23 @@ renderSyncState ss =
   case ss of
     SyncFollowing -> "following"
     SyncLagging -> "lagging"
+
+renderScriptPurpose :: ScriptPurpose -> Text
+renderScriptPurpose ss =
+  case ss of
+    Spend -> "spend"
+    Mint -> "mint"
+    Cert -> "cert"
+    Rewrd -> "reward"
+
+readScriptPurpose :: String -> ScriptPurpose
+readScriptPurpose str =
+  case str of
+    "spend" -> Spend
+    "mint" -> Mint
+    "cert" -> Cert
+    "reward" -> Rewrd
+    _other -> error $ "readScriptPurpose: Unknown ScriptPurpose " ++ str
 
 showRewardType :: Shelley.RewardType -> Text
 showRewardType rt =
