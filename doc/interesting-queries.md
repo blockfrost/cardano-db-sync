@@ -437,6 +437,22 @@ select
 ...
 ```
 
+### Get Ada in UTxO locked by scripts
+```sql
+select sum (value) / 1000000 as script_locked from tx_out as tx_outer where
+    tx_outer.address_has_script = true and
+    not exists
+      ( select tx_out.id from tx_out inner join tx_in
+          on tx_out.tx_id = tx_in.tx_out_id and tx_out.index = tx_in.tx_out_index
+          where tx_outer.id = tx_out.id
+      ) ;
+    script_locked
+----------------------
+ 3695300.068246000000
+(1 row)
+
+```
+
 ---
 
 [Query.hs]: https://github.com/input-output-hk/cardano-db-sync/blob/master/cardano-db/src/Cardano/Db/Query.hs
