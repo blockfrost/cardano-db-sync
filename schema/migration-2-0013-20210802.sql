@@ -6,6 +6,7 @@ DECLARE
 BEGIN
   SELECT stage_two + 1 INTO next_version FROM schema_version ;
   IF next_version = 13 THEN
+    EXECUTE 'UPDATE "epoch_sync_time" SET "seconds" = 0 WHERE "seconds" IS NULL;' ;
     EXECUTE 'ALTER TABLE "epoch_sync_time" ALTER COLUMN "seconds" SET NOT NULL' ;
     EXECUTE 'ALTER TABLE "epoch_sync_time" ALTER COLUMN "seconds" TYPE word63type' ;
     -- Hand written SQL statements can be added here.
