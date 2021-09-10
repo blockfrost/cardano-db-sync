@@ -123,9 +123,11 @@ diffRewardMap epochNo dbMap ledgerMap = do
       mapM_ reportDiff $ Map.toList diffMap
     when (Map.size diffMap > 0) $ do
       reportCount epochNo diffMap
-      panicAbort $ Text.unlines
+      liftIO $ putStrLn $ Text.unpack $
+            Text.unlines
             [ "Rewards differ between ledger and db-sync."
             , "Please report at https://github.com/input-output-hk/cardano-db-sync/issues."
+            , "XXX: Would panic on epochNo " <> Text.pack (show epochNo)
             ]
   where
     keys :: [Generic.StakeCred]
