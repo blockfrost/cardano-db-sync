@@ -40,7 +40,8 @@ validateRewardWithdrawals (EpochNo epochNo) = do
       ([], _) -> pure ()
       (xs, _) -> do
         putStr $ show (length xs) ++ " errors, eg\n" ++ unlines (map reportError xs)
-        panicAbort $ "validateRewardWithdrawals: " <> textShow epochNo
+        putStrLn $ Text.unpack $ "validateRewardWithdrawals: " <> textShow epochNo
+        putStrLn "XXX: Would panic here due to ^^"
 
 -- -----------------------------------------------------------------------------
 
