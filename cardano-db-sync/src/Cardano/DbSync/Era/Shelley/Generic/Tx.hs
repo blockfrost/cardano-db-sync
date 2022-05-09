@@ -7,6 +7,8 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Cardano.DbSync.Era.Shelley.Generic.Tx
   ( Tx (..)
   , TxCertificate (..)
@@ -76,6 +78,9 @@ import           Ouroboros.Consensus.Cardano.Block (StandardAllegra, StandardAlo
                    StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Ledger.Block (ShelleyBasedEra)
 
+import qualified Cardano.Binary as CBOR
+import qualified Plutus.V1.Ledger.Api as Plutus
+import           Codec.Serialise.Class (Serialise (..))
 
 data Tx = Tx
   { txHash :: !ByteString
@@ -151,6 +156,15 @@ data TxDatum = TxDatum
   { txDatumHash :: !ByteString
   , txDatumValue :: !ByteString -- we turn this into json later.
   }
+
+instance Api.SerialiseAsCBOR Api.ScriptData where
+  serialiseToCBOR = CBOR.serialize'
+
+instance CBOR.ToCBOR Api.ScriptData where
+  toCBOR = encode @Plutus.Data . Api.toPlutusData
+
+instance CBOR.FromCBOR Api.ScriptData where
+  fromCBOR = Api.fromPlutusData <$> decode @Plutus.Data
 
 fromAllegraTx :: (Word64, ShelleyTx.Tx StandardAllegra) -> Tx
 fromAllegraTx (blkIndex, tx) =
