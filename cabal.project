@@ -8,6 +8,7 @@ packages:
   cardano-db-tool
   cardano-smash-server
   cardano-sync
+  backfill-cbor-datums
 
 constraints:
     libsystemd-journal >= 1.4.4

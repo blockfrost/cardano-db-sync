@@ -29,6 +29,8 @@ in {
     cardano-db-tool;
   inherit (cardanoDbSyncHaskellPackages.cardano-node.components.exes)
       cardano-node;
+  inherit (cardanoDbSyncHaskellPackages.backfill-cbor-datums.components.exes)
+      backfill-cbor-datums;
 
   cabal = haskell-nix.tool compiler "cabal" {
     version = "latest";
