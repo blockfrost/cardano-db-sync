@@ -393,7 +393,7 @@ share
     hash                ByteString          sqltype=hash32type
     txId                TxId                OnDeleteCascade
     value               Text Maybe          sqltype=jsonb
-    bytes               ByteString          sqltype=bytea
+    bytes               ByteString Maybe    sqltype=bytea
     UniqueData          hash
 
   -- -----------------------------------------------------------------------------------------------

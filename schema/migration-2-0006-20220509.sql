@@ -6,7 +6,8 @@ DECLARE
 BEGIN
   SELECT stage_two + 1 INTO next_version FROM schema_version ;
   IF next_version = 6 THEN
-    EXECUTE 'ALTER TABLE "datum" ADD COLUMN "bytes" bytea NOT NULL' ;
+    EXECUTE 'ALTER TABLE "datum" ADD COLUMN "bytes" bytea' ;
+
     -- Hand written SQL statements can be added here.
     UPDATE schema_version SET stage_two = next_version ;
     RAISE NOTICE 'DB has been migrated to stage_two version %', next_version ;
