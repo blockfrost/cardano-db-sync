@@ -122,6 +122,8 @@ library
                       , persistent
                       , persistent-postgresql
                       , prometheus
+                      , plutus-ledger-api
+                      , serialise
                       , random-shuffle
                       , small-steps
                       , split

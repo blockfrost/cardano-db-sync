@@ -22,7 +22,7 @@ let
       (selectProjectPackages cardanoDbSyncHaskellPackages);
 
   packages = {
-    inherit haskellPackages cardano-db-sync cardano-db-sync-extended cardano-node scripts dockerImage;
+    inherit haskellPackages cardano-db-sync cardano-db-sync-extended cardano-node scripts dockerImage backfill-cbor-datums;
 
     # so that eval time gc roots are cached (nix-tools stuff)
     inherit (cardanoDbSyncProject) roots plan-nix;

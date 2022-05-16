@@ -393,6 +393,7 @@ share
     hash                ByteString          sqltype=hash32type
     txId                TxId                OnDeleteCascade
     value               Text Maybe          sqltype=jsonb
+    bytes               ByteString Maybe    sqltype=bytea
     UniqueData          hash
 
   -- -----------------------------------------------------------------------------------------------
@@ -817,7 +818,8 @@ schemaDocs =
       "A table containing Plutus Data available in the blockchain, found in redeemers or witnesses"
       DatumHash # "The Hash of the Plutus Data"
       DatumTxId # "The Tx table index for the transaction where this script first became available."
-      DatumValue # "The actual data in json format"
+      DatumValue # "The actual data in JSON format (detailed schema)"
+      DatumBytes # "The actual data in CBOR format"
 
     ParamProposal --^ do
       "A table containing block chain parameter change proposals."
