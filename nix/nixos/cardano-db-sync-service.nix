@@ -197,7 +197,7 @@ in {
 
         mkdir -p log-dir
         exec ${exec} \
-          --config ${configFile} \
+          --config /etc/secrets/mainnet-config.yaml \
           --socket-path "$CARDANO_NODE_SOCKET_PATH" \
           --schema-dir ${self.schema or (self.src + "/schema")} \
           --state-dir ${cfg.stateDir} \
