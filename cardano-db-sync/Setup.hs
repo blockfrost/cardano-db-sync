@@ -11,6 +11,7 @@ import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHook
 import Distribution.Simple.BuildPaths (autogenPackageModulesDir)
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
 import Distribution.Simple.Utils (createDirectoryIfMissingVerbose, rewriteFileEx)
+import Distribution.Utils.Path (interpretSymbolicPath)
 import Distribution.Verbosity (normal)
 
 import System.Directory (listDirectory)
@@ -33,7 +34,7 @@ main = defaultMainWithHooks generateHooks
 
     generate :: LocalBuildInfo -> IO ()
     generate locInfo =
-      generateMigrations locInfo "schema" (autogenPackageModulesDir locInfo)
+      generateMigrations locInfo "schema" (interpretSymbolicPath Nothing $ autogenPackageModulesDir locInfo)
 
 generateMigrations :: LocalBuildInfo -> FilePath -> FilePath -> IO ()
 generateMigrations locInfo srcDir outDir = do
@@ -56,7 +57,7 @@ generateMigrations locInfo srcDir outDir = do
       takeDirectory
         <$> filter
           ((== ".sql") . takeExtension)
-          (extraSrcFiles $ localPkgDescr locInfo)
+          (map (interpretSymbolicPath Nothing) (extraSrcFiles $ localPkgDescr locInfo))
 
     hashAs :: ByteString -> Hash Blake2b_256 ByteString
     hashAs = hashWith id
