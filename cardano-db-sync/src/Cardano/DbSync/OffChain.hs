@@ -344,7 +344,7 @@ fetchOffChainVoteData gateways time oVoteWorkQ =
   convert <<$>> runExceptT $ do
     let url = oVoteWqUrl oVoteWorkQ
         metaHash = oVoteWqMetaHash oVoteWorkQ
-    httpGetOffChainVoteData gateways url (Just metaHash) (oVoteWqType oVoteWorkQ)
+    httpGetOffChainVoteData gateways url metaHash (oVoteWqType oVoteWorkQ)
   where
     convert :: Either OffChainFetchError SimplifiedOffChainVoteData -> OffChainVoteResult
     convert eres =
